@@ -16,6 +16,7 @@ Usage:
 
 load("//bazel:api.bzl", "modular_py_binary", "modular_py_library", "requirement")
 load("//max/kernels/benchmarks/misc/blackwell_bench:wheels.bzl", "blackwell_bench_wheel")
+load("//max/kernels/benchmarks/misc/hopper_bench:wheels.bzl", "hopper_bench_wheel")
 
 package(default_visibility = ["//max:consumers"])
 
@@ -43,6 +44,28 @@ modular_py_library(
         ":bench_decode_lib",
         "//max/kernels/benchmarks/autotune:bencher_utils",
         "//max/kernels/benchmarks/misc/blackwell_bench:cutlass-imports",
+        "//max/kernels/benchmarks/misc/utils:bench_utils",
+        "//max/python/max",
+    ],
+)
+
+# Hopper-oriented baseline library for MHA prefill/decode/MLA scripts.
+modular_py_library(
+    name = "bench_hopper_baseline_lib",
+    srcs = [
+        "bench_hopper_decode.py",
+        "bench_hopper_mla_decode.py",
+        "bench_hopper_prefill.py",
+    ],
+    imports = ["../../../../../../rules_pycross++lock_file+modular_pip_lock_file_repo/deps/nvidia-cutlass-dsl@4.3.0/site-packages/nvidia_cutlass_dsl/python_packages"],
+    tags = ["no-pydeps"],  # The wheels do not behave well with our pydeps enforcer, see import above
+    deps = [
+        hopper_bench_wheel("flash-attn"),
+        hopper_bench_wheel("flashinfer"),
+        requirement("packaging"),
+        requirement("torch"),
+        "//max/kernels/benchmarks/autotune:bencher_utils",
+        "//max/kernels/benchmarks/misc/hopper_bench:cutlass-imports",
         "//max/kernels/benchmarks/misc/utils:bench_utils",
         "//max/python/max",
     ],

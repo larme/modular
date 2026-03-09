@@ -54,6 +54,7 @@ modular_py_binary(
         requirement("packaging"),
         "//max/kernels/benchmarks/autotune:bencher_utils",
         "//max/kernels/benchmarks/misc/comparison:bench_baseline_lib",
+        "//max/kernels/benchmarks/misc/comparison:bench_hopper_baseline_lib",
     ],
 )
 

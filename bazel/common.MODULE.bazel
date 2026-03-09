@@ -515,6 +515,24 @@ http_file(
     urls = ["https://modular-bazel-artifacts-public.s3.amazonaws.com/artifacts/flash_attn/sm100/3f4db99ab00437fb50c61da11d0647e5ab7aeab1b0b7337ae048dd8ee1b308b2/flash_attn-2.8.3-py3-none-any.whl"],
 )
 
+# Hopper (SM90) benchmark wheel dependencies for external baselines.
+# FlashInfer uses upstream PyPI wheel pinned to the lockfile version.
+http_file(
+    name = "flashinfer_hopper_wheel",
+    downloaded_file_path = "flashinfer_python-0.5.3-py3-none-any.whl",
+    sha256 = "b601293b72f9138bad173edc28df84b9f239a013be974e2e79d4ba98aeb38cf5",
+    urls = ["https://files.pythonhosted.org/packages/76/78/6dc7e7da8cb87c9965644ea0d2439457a1bc9256c45ceda0044595be4143/flashinfer_python-0.5.3-py3-none-any.whl"],
+)
+
+# The flash-attn wheel used by these benchmarks is pure Python (py3-none-any),
+# so we pin the same package version for Hopper as well.
+http_file(
+    name = "flash_attn_hopper_wheel",
+    downloaded_file_path = "flash_attn-2.8.3-py3-none-any.whl",
+    sha256 = "3f4db99ab00437fb50c61da11d0647e5ab7aeab1b0b7337ae048dd8ee1b308b2",
+    urls = ["https://modular-bazel-artifacts-public.s3.amazonaws.com/artifacts/flash_attn/sm100/3f4db99ab00437fb50c61da11d0647e5ab7aeab1b0b7337ae048dd8ee1b308b2/flash_attn-2.8.3-py3-none-any.whl"],
+)
+
 # https://github.com/modularml/breathe
 http_archive(
     name = "breathe",
