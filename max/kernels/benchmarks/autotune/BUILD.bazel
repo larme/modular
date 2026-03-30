@@ -58,10 +58,8 @@ modular_py_binary(
         requirement("torch"),
         requirement("packaging"),
         "//max/kernels/benchmarks/autotune:bencher_utils",
-    ] + select({
-        "//:nvidia_gpu": ["//max/kernels/benchmarks/misc/comparison:bench_baseline_lib"],
-        "//conditions:default": [],
-    }),
+        "//max/kernels/benchmarks/misc/comparison:bench_baseline_lib",
+    ],
 )
 
 modular_py_binary(
