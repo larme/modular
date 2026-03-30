@@ -59,6 +59,8 @@ modular_py_binary(
         requirement("packaging"),
         "//max/kernels/benchmarks/autotune:bencher_utils",
         "//max/kernels/benchmarks/misc/utils:bench_utils",
+        "//max/python/max",
+        "//max/python/max/experimental/torch",
     ],
 )
 
