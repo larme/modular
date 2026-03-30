@@ -25,6 +25,7 @@
 
 name: bench_mla_decode_sm100_deepseek_bf16
 file: $BUILD_WORKSPACE_DIRECTORY/max/kernels/benchmarks/misc/comparison/bench_blackwell_mla_decode.py
+bazel_target: //max/kernels/benchmarks/misc/comparison:bench_mla_decode
 
 # Shared dimensions anchor
 deepseek-dims: &deepseek-dims

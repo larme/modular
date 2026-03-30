@@ -13,6 +13,7 @@
 
 name: bench_decode_subgraph
 file: $BUILD_WORKSPACE_DIRECTORY/max/kernels/benchmarks/misc/comparison/bench_blackwell_decode.py
+bazel_target: //max/kernels/benchmarks/misc/comparison:bench_decode
 
 deepseek-v2-commons: &deepseek-v2-commons
   $num_heads: 16

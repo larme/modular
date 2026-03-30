@@ -12,6 +12,7 @@
 ##===----------------------------------------------------------------------===##
 name: bench_grouped_gemm
 file: $BUILD_WORKSPACE_DIRECTORY/max/kernels/benchmarks/misc/comparison/bench_blackwell_grouped_gemm.py
+bazel_target: //max/kernels/benchmarks/misc/comparison:bench_grouped_gemm
 
 commons: &commons
   model: deepseek-v2

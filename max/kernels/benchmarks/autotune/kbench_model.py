@@ -162,6 +162,86 @@ def _run_cmdline(
         )
 
 
+def _workspace_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+def _bazel_binary(workspace_root: Path) -> str:
+    bazelw = workspace_root / "bazelw"
+    if bazelw.exists():
+        return str(bazelw)
+    if bazel := shutil.which("bazel"):
+        return bazel
+    raise FileNotFoundError("Could not find bazelw or bazel.")
+
+
+def _run_cmdline_in_dir(
+    cmd: Sequence[str],
+    cwd: Path,
+    dryrun: bool = False,
+    timeout: int | None = None,
+) -> ProcessOutput:
+    try:
+        if dryrun:
+            print(list2cmdline(cmd))
+            return ProcessOutput(None, None, -1, None)
+
+        if timeout is None:
+            output = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                cwd=str(cwd),
+                env=os.environ.copy(),
+            )
+        else:
+            output = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                cwd=str(cwd),
+                env=os.environ.copy(),
+                timeout=timeout,
+            )
+
+        return ProcessOutput(
+            output.stdout.decode("utf-8"),
+            output.stderr.decode("utf-8"),
+            output.returncode,
+        )
+    except Exception as exc:
+        return ProcessOutput(
+            None,
+            f"Unable to run command {list2cmdline(cmd)} in {cwd}: {exc}",
+            os.EX_OSERR,
+        )
+
+
+def _resolve_bazel_binary_output(
+    bazel_target: str, workspace_root: Path, dryrun: bool
+) -> ProcessOutput:
+    bazel = _bazel_binary(workspace_root)
+    out = _run_cmdline_in_dir(
+        [bazel, "cquery", bazel_target, "--output=files"],
+        workspace_root,
+        dryrun=dryrun,
+    )
+    if out.return_code != os.EX_OK or not out.stdout:
+        out.path = None
+        return out
+
+    files = [line.strip() for line in out.stdout.splitlines() if line.strip()]
+    if not files:
+        out.return_code = os.EX_OSFILE
+        out.stderr = f"No output files found for {bazel_target}"
+        out.path = None
+        return out
+
+    executable = workspace_root / files[0]
+    out.path = executable
+    return out
+
+
 @dataclass(frozen=True)
 class Lang:
     name: str
@@ -343,6 +423,7 @@ class SpecInstance:
     file: Path
     executor: Lang
     params: list[Param] = field(default_factory=list)
+    bazel_target: str | None = None
 
     def __bool__(self) -> bool:
         return bool(self.params)
@@ -391,6 +472,21 @@ class SpecInstance:
             )
 
         executor = self.executor
+
+        if self.bazel_target:
+            workspace_root = _workspace_root()
+            bazel = _bazel_binary(workspace_root)
+            out = _run_cmdline_in_dir(
+                [bazel, "build", self.bazel_target],
+                workspace_root,
+                dryrun=dryrun,
+            )
+            if out.return_code != os.EX_OK:
+                out.path = None
+                return out
+            return _resolve_bazel_binary_output(
+                self.bazel_target, workspace_root, dryrun
+            )
 
         if not executor.needs_compilation:
             return ProcessOutput(return_code=os.EX_OK, path=self.file)
@@ -485,7 +581,7 @@ class SpecInstance:
         env: dict[str, str] = {},  # noqa: B006
         timeout_secs: int | None = None,
     ) -> ProcessOutput:
-        if self.executor == SupportedLangs.PYTHON:
+        if self.executor == SupportedLangs.PYTHON and self.bazel_target is None:
             exec_prefix = exec_prefix + [self.executor.path]
             vars = self._get_defines + self._get_vars
         else:
@@ -540,7 +636,11 @@ class GridSearchStrategy:
     instances: list[SpecInstance] = field(default_factory=list)
 
     def __init__(
-        self, name: str, file: Path, params: list[list[ParamSpace]]
+        self,
+        name: str,
+        file: Path,
+        params: list[list[ParamSpace]],
+        bazel_target: str | None = None,
     ) -> None:
         self.instances: list[SpecInstance] = []
 
@@ -554,6 +654,7 @@ class GridSearchStrategy:
                 s = SpecInstance(
                     name=name,
                     file=file,
+                    bazel_target=bazel_target,
                     params=[
                         Param(name=name_list[i], value=param_mesh[idx][i])
                         for i in range(num_params)
@@ -593,6 +694,7 @@ class Spec:
     mesh_idx: int = 0
     mesh: list[SpecInstance] = field(default_factory=list)
     rules: list[str] = field(default_factory=list)
+    bazel_target: str | None = None
 
     @staticmethod
     def load_yaml(file: Path) -> Spec:
@@ -716,6 +818,8 @@ class Spec:
             "file": self.file,
             "params": [s.to_obj() for s in self.mesh],
         }
+        if self.bazel_target:
+            obj["bazel_target"] = self.bazel_target
         with open(out_path, "w") as f:
             yaml.dump(obj, f, sort_keys=False)
         logging.debug(f"dumped {len(self.mesh)} instances to [{out_path}]")
@@ -753,6 +857,7 @@ class Spec:
             file=obj.get("file", ""),
             params=params,
             rules=obj.get("rules", []),
+            bazel_target=obj.get("bazel_target"),
         )
 
     def __len__(self) -> int:
@@ -774,7 +879,12 @@ class Spec:
         else:
             # default values for empty mesh
             self.mesh = [
-                SpecInstance("", Path("./"), executor=SupportedLangs.MOJO)
+                SpecInstance(
+                    "",
+                    Path("./"),
+                    executor=SupportedLangs.MOJO,
+                    bazel_target=self.bazel_target,
+                )
             ]
 
     def setup_mesh(self) -> int:
@@ -797,13 +907,21 @@ class Spec:
 
         Return the total size of mesh.
         """
-        grid_mesh = list(GridSearchStrategy(self.name, self.file, self.params))
+        grid_mesh = list(
+            GridSearchStrategy(
+                self.name,
+                self.file,
+                self.params,
+                bazel_target=self.bazel_target,
+            )
+        )
         self.mesh = self.apply_rules(grid_mesh, self.rules)
         return len(self.mesh)
 
     def join(self, other: Spec) -> None:
         assert self.name == other.name
         assert self.file == other.file
+        assert self.bazel_target == other.bazel_target
         assert len(other.mesh) > 0
 
         self.mesh_idx = 0
