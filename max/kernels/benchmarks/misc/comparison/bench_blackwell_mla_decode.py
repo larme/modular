@@ -34,7 +34,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 # MAX imports
-from bench import bench_kineto_with_cupti_warmup, setup_ninja_path
+from bench import (
+    bench_kineto_with_candidates,
+    bench_kineto_with_cupti_warmup,
+    setup_ninja_path,
+)
 from bencher_utils import Bench, ThroughputMeasure
 from max._kv_cache_ops import mla_dispatch_args_scalar
 from max.driver import Accelerator, Buffer
@@ -89,6 +93,13 @@ MODEL_PRESETS: dict[str, dict[str, int]] = {
     "deepseek-v3": _DEEPSEEK_DIMS,
     "kimi-k2.5": _KIMI_DIMS,
 }
+
+_MAX_MLA_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = (
+    "mo.mla.decode.ragged.paged.scaled",
+    "mo.mla.decode.ragged.paged",
+    "mo.mla",
+    "mla",
+)
 
 
 def to_float8(
@@ -922,9 +933,9 @@ def bench_max(
     # Note: Split-K implementation uses two kernels (decode + combine), so we
     # need with_multiple_kernels=True to sum their times
     try:
-        time_s = bench_kineto_with_cupti_warmup(
+        time_s = bench_kineto_with_candidates(
             run_kernel,
-            kernel_names="mla",
+            kernel_name_candidates=_MAX_MLA_DECODE_KERNEL_CANDIDATES,
             num_tests=num_iters,
             suppress_kineto_output=True,
             flush_l2=True,
@@ -933,7 +944,7 @@ def bench_max(
         assert isinstance(time_s, float)  # Single kernel_name returns float
     except RuntimeError as e:
         # If kineto fails (e.g., running under ncu/nsys), return dummy time
-        if "No kernel times found" in str(e):
+        if "No kernel times found" in str(e) or "Failed to match any profiler" in str(e):
             print(
                 f"Warning: kineto profiling failed (likely running under ncu/nsys). "
                 f"Use --no-kineto flag to skip kineto. Error: {e}"

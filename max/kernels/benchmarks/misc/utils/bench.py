@@ -18,7 +18,7 @@
 
 import os
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import torch
@@ -356,3 +356,47 @@ def bench_kineto_with_cupti_warmup(
             best = min(best, result)
     assert best is not None
     return best
+
+
+def bench_kineto_with_candidates(
+    fn: Callable[[], Any],
+    kernel_name_candidates: Sequence[str | tuple[str, ...]],
+    *,
+    num_tests: int = 30,
+    suppress_kineto_output: bool = False,
+    trace_path: str | None = None,
+    flush_l2: bool = True,
+    with_multiple_kernels: bool = False,
+    num_profiler_passes: int = 5,
+) -> float | tuple[float, ...]:
+    """Try multiple kernel-name patterns and return the first successful match.
+
+    This is useful when profiler-visible names drift across compiler/runtime
+    versions while the underlying benchmarked op stays the same.
+    """
+    last_error: Exception | None = None
+    for kernel_names in kernel_name_candidates:
+        try:
+            return bench_kineto_with_cupti_warmup(
+                fn,
+                kernel_names=kernel_names,
+                num_tests=num_tests,
+                suppress_kineto_output=suppress_kineto_output,
+                trace_path=trace_path,
+                flush_l2=flush_l2,
+                with_multiple_kernels=with_multiple_kernels,
+                num_profiler_passes=num_profiler_passes,
+            )
+        except (AssertionError, RuntimeError) as e:
+            last_error = e
+            # Only write the trace for the first successful candidate.
+            trace_path = None
+
+    patterns = ", ".join(map(str, kernel_name_candidates))
+    if last_error is None:
+        raise RuntimeError(
+            f"No profiler kernel-name candidates were provided: {patterns}"
+        )
+    raise RuntimeError(
+        f"Failed to match any profiler kernel-name candidate among: {patterns}"
+    ) from last_error

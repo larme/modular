@@ -32,7 +32,7 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import argparse
 
-from bench import bench_kineto, setup_ninja_path
+from bench import bench_kineto_with_candidates, setup_ninja_path
 from bencher_utils import Bench, ThroughputMeasure
 
 # MAX imports
@@ -57,6 +57,12 @@ try:
 except ImportError as e:
     print(f"Error: flashinfer not available: {e}")
     _flashinfer = None
+
+
+_MAX_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = (
+    "mo.mha.ragged.paged",
+    "mha",
+)
 
 
 def bench_flashinfer(
@@ -421,9 +427,9 @@ def bench_max(
         run_kernel()
 
     # Use bench_kineto to profile the kernel
-    time_s = bench_kineto(
+    time_s = bench_kineto_with_candidates(
         run_kernel,
-        kernel_names="mha",
+        kernel_name_candidates=_MAX_DECODE_KERNEL_CANDIDATES,
         num_tests=100,
         suppress_kineto_output=True,
         flush_l2=True,
@@ -588,7 +594,14 @@ def main() -> None:
         engine=args.engine,
     )
 
-    met_sec, bytes = result or [0, 0]
+    if result is None:
+        print("Benchmark returned no result (kernel error or unsupported config)")
+        raise SystemExit(1)
+
+    met_sec, bytes = result
+    if met_sec <= 0:
+        print(f"Benchmark returned invalid time: {met_sec}")
+        raise SystemExit(1)
     bytes_per_sec = ThroughputMeasure(Bench.bytes, bytes)
 
     name = (

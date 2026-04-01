@@ -26,7 +26,11 @@ from typing import Any
 import torch
 
 # Import bench utilities from Bazel dependency (bench_utils target)
-from bench import bench_kineto_with_cupti_warmup, setup_ninja_path
+from bench import (
+    bench_kineto_with_candidates,
+    bench_kineto_with_cupti_warmup,
+    setup_ninja_path,
+)
 from bencher_utils import Bench, ThroughputMeasure
 
 # MAX imports
@@ -75,6 +79,13 @@ try:
 except ImportError as e:
     print(f"Error: flash_attn not available: {e}")
     _flash_attn_varlen_func = None
+
+
+_MAX_PREFILL_KERNEL_CANDIDATES: tuple[str, ...] = (
+    "mo.mha.no_cache",
+    "flash_attention_gpu",
+    "mha",
+)
 
 
 def bench_flashinfer(
@@ -256,9 +267,9 @@ def bench_max(
         return None
 
     # Use bench_kineto_with_cupti_warmup to handle CUPTI warmup
-    time_s = bench_kineto_with_cupti_warmup(
+    time_s = bench_kineto_with_candidates(
         run_kernel,
-        kernel_names="mha",
+        kernel_name_candidates=_MAX_PREFILL_KERNEL_CANDIDATES,
         num_tests=num_iters,
         suppress_kineto_output=True,
         flush_l2=True,
@@ -521,8 +532,16 @@ if __name__ == "__main__":
         no_kineto=args.no_kineto,
     )
 
+    if result is None:
+        print("Benchmark returned no result (kernel error or unsupported config)")
+        raise SystemExit(1)
+
     if args.num_iters > 1 and not args.no_kineto:
-        met_sec, flops = result if result else [0, 0]
+        met_sec, flops = result
+        if met_sec <= 0:
+            print(f"Benchmark returned invalid time: {met_sec}")
+            raise SystemExit(1)
+
         flops_per_sec = ThroughputMeasure(Bench.flops, flops)
         name = (
             f"MHA_Prefill/batch_size={args.batch_size}/qkv_len={args.qkv_len}/"
