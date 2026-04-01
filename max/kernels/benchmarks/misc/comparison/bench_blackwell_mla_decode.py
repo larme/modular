@@ -937,7 +937,7 @@ def bench_max(
             run_kernel,
             kernel_name_candidates=_MAX_MLA_DECODE_KERNEL_CANDIDATES,
             num_tests=num_iters,
-            suppress_kineto_output=True,
+            suppress_kineto_output=False,
             flush_l2=True,
             with_multiple_kernels=True,
         )
@@ -949,6 +949,7 @@ def bench_max(
                 f"Warning: kineto profiling failed (likely running under ncu/nsys). "
                 f"Use --no-kineto flag to skip kineto. Error: {e}"
             )
+            print("Profiler kernel matching failed after printing the Kineto table above.")
             run_kernel()
             torch.cuda.synchronize()
             return 1.0, total_bytes

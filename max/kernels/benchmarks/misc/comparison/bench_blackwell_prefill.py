@@ -271,7 +271,7 @@ def bench_max(
         run_kernel,
         kernel_name_candidates=_MAX_PREFILL_KERNEL_CANDIDATES,
         num_tests=num_iters,
-        suppress_kineto_output=True,
+        suppress_kineto_output=False,
         flush_l2=True,
     )
     assert isinstance(time_s, float)  # Single kernel_name returns float
