@@ -95,6 +95,8 @@ MODEL_PRESETS: dict[str, dict[str, int]] = {
 }
 
 _MAX_MLA_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = (
+    "nn_attention_gpu_nvidia_sm106",
+    "nn_attention_gpu_nvidia_sm",
     "mo.mla.decode.ragged.paged.scaled",
     "mo.mla.decode.ragged.paged",
     "mo.mla",

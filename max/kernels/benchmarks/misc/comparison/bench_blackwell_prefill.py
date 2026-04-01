@@ -82,6 +82,8 @@ except ImportError as e:
 
 
 _MAX_PREFILL_KERNEL_CANDIDATES: tuple[str, ...] = (
+    "nn_attention_gpu_nvidia_sm106",
+    "nn_attention_gpu_nvidia_sm",
     "mo.mha.no_cache",
     "flash_attention_gpu",
     "mha",
