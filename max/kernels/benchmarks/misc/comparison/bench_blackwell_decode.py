@@ -32,7 +32,11 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import argparse
 
-from bench import bench_kineto_with_candidates, setup_ninja_path
+from bench import (
+    bench_kineto_with_candidates,
+    nvidia_attention_kernel_candidates,
+    setup_ninja_path,
+)
 from bencher_utils import Bench, ThroughputMeasure
 
 # MAX imports
@@ -59,7 +63,7 @@ except ImportError as e:
     _flashinfer = None
 
 
-_MAX_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = (
+_MAX_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = nvidia_attention_kernel_candidates(
     "mo.mha.ragged.paged",
     "mha",
 )

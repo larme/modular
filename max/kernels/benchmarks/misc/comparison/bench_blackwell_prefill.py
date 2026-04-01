@@ -29,6 +29,7 @@ import torch
 from bench import (
     bench_kineto_with_candidates,
     bench_kineto_with_cupti_warmup,
+    nvidia_attention_kernel_candidates,
     setup_ninja_path,
 )
 from bencher_utils import Bench, ThroughputMeasure
@@ -81,9 +82,7 @@ except ImportError as e:
     _flash_attn_varlen_func = None
 
 
-_MAX_PREFILL_KERNEL_CANDIDATES: tuple[str, ...] = (
-    "nn_attention_gpu_nvidia_sm106",
-    "nn_attention_gpu_nvidia_sm",
+_MAX_PREFILL_KERNEL_CANDIDATES: tuple[str, ...] = nvidia_attention_kernel_candidates(
     "mo.mha.no_cache",
     "flash_attention_gpu",
     "mha",

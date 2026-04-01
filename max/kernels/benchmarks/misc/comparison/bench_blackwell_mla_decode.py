@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bench import (
     bench_kineto_with_candidates,
     bench_kineto_with_cupti_warmup,
+    nvidia_attention_kernel_candidates,
     setup_ninja_path,
 )
 from bencher_utils import Bench, ThroughputMeasure
@@ -94,9 +95,7 @@ MODEL_PRESETS: dict[str, dict[str, int]] = {
     "kimi-k2.5": _KIMI_DIMS,
 }
 
-_MAX_MLA_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = (
-    "nn_attention_gpu_nvidia_sm106",
-    "nn_attention_gpu_nvidia_sm",
+_MAX_MLA_DECODE_KERNEL_CANDIDATES: tuple[str, ...] = nvidia_attention_kernel_candidates(
     "mo.mla.decode.ragged.paged.scaled",
     "mo.mla.decode.ragged.paged",
     "mo.mla",

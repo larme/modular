@@ -49,6 +49,32 @@ def setup_ninja_path() -> None:
         pass  # ninja not available, flashinfer import will fail separately
 
 
+def nvidia_attention_kernel_candidates(
+    *suffix_candidates: str,
+) -> tuple[str, ...]:
+    """Return profiler kernel-name candidates for MAX attention kernels.
+
+    The profiler-visible name encodes the concrete runtime SM version, which can
+    be more specific than the benchmark target family (for example `sm106`
+    while the benchmark target is `sm_100`). Build the most specific prefix from
+    the actual CUDA device capability first, then fall back to the broader
+    `nn_attention_gpu_nvidia_sm` prefix.
+    """
+    prefixes: list[str] = []
+    if torch.cuda.is_available():
+        major, minor = torch.cuda.get_device_capability()
+        prefixes.append(f"nn_attention_gpu_nvidia_sm{major}{minor}")
+    prefixes.append("nn_attention_gpu_nvidia_sm")
+
+    seen: set[str] = set()
+    candidates: list[str] = []
+    for name in [*prefixes, *suffix_candidates]:
+        if name and name not in seen:
+            seen.add(name)
+            candidates.append(name)
+    return tuple(candidates)
+
+
 def bench(
     fn: Callable[[], Any],
     num_warmups: int = 5,
