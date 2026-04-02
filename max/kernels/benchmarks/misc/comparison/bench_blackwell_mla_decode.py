@@ -41,7 +41,6 @@ from bench import (
     setup_ninja_path,
 )
 from bencher_utils import Bench, ThroughputMeasure
-from max._kv_cache_ops import mla_dispatch_args_scalar
 from max.driver import Accelerator, Buffer
 from max.dtype import DType
 from max.engine import InferenceSession
@@ -53,6 +52,7 @@ from max.nn.kernels import (
     flare_mla_decode_ragged_scaled,
 )
 from max.nn.kv_cache import (
+    AttentionDispatchResolver,
     KVCacheParams,
     PagedCacheValues,
 )
@@ -673,7 +673,7 @@ def bench_max(
     scalar_args_type = TensorType(
         DType.int64,
         shape=[3],
-        device=DeviceRef.CPU(),
+        device=DeviceRef.GPU(),
     )
 
     # Build graph with MLA decode
@@ -862,20 +862,19 @@ def bench_max(
         0, total_tokens + 1, q_len_per_request, dtype=torch.int32, device="cuda"
     ).to(torch.uint32)
 
-    # Scalar dispatch args for the MLA decode kernel (shape [3], int64, CPU).
-    # Use the canonical Mojo dispatch heuristic via mla_dispatch_args_scalar
-    # instead of duplicating the logic in Python.
-    device = Accelerator()
-    scalar_args_np = np.array(
-        mla_dispatch_args_scalar(
-            batch_size,
-            cache_len,
-            q_len_per_request,
-            num_q_heads,
-            is_fp8_kv,
-            device,
-        ),
-        dtype=np.int64,
+    # MLA decode dispatch metadata is now modeled as a device-resident buffer.
+    # Reuse the same resolver as the serve / graph-capture path so the
+    # benchmark stays aligned with the production scalar-args contract.
+    scalar_args = AttentionDispatchResolver(
+        devices=[DeviceRef.GPU()],
+        is_mla=True,
+        n_kv_heads_per_device=1,
+        num_q_heads_per_device=num_q_heads,
+        is_fp8_kv=is_fp8_kv,
+    )(
+        batch_size=batch_size,
+        max_prompt_length=q_len_per_request,
+        max_cache_valid_length=cache_len,
     )
 
     def run_kernel() -> Any:
@@ -889,7 +888,7 @@ def bench_max(
                 max_lengths_max,
                 kv_scales_max,
                 q_scales_max,
-                scalar_args_np,
+                scalar_args,
             )[0]
         else:
             output = model.execute(
@@ -899,7 +898,7 @@ def bench_max(
                 cache_lengths_max,
                 lut_max,
                 max_lengths_max,
-                scalar_args_np,
+                scalar_args,
             )[0]
         return output
 
