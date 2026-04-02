@@ -865,7 +865,7 @@ def bench_max(
     # MLA decode dispatch metadata is now modeled as a device-resident buffer.
     # Reuse the same resolver as the serve / graph-capture path so the
     # benchmark stays aligned with the production scalar-args contract.
-    scalar_args = AttentionDispatchResolver(
+    scalar_args_buf: Buffer = AttentionDispatchResolver(
         devices=[DeviceRef.GPU()],
         is_mla=True,
         n_kv_heads_per_device=1,
@@ -888,7 +888,7 @@ def bench_max(
                 max_lengths_max,
                 kv_scales_max,
                 q_scales_max,
-                scalar_args,
+                scalar_args_buf,
             )[0]
         else:
             output = model.execute(
@@ -898,7 +898,7 @@ def bench_max(
                 cache_lengths_max,
                 lut_max,
                 max_lengths_max,
-                scalar_args,
+                scalar_args_buf,
             )[0]
         return output
 
