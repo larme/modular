@@ -937,7 +937,7 @@ def bench_max(
             run_kernel,
             kernel_name_candidates=_MAX_MLA_DECODE_KERNEL_CANDIDATES,
             num_tests=num_iters,
-            suppress_kineto_output=False,
+            suppress_kineto_output=True,
             flush_l2=True,
             with_multiple_kernels=True,
         )
