@@ -452,9 +452,9 @@ http_file(
 
 http_file(
     name = "flashinfer_sm100_wheel",
-    downloaded_file_path = "flashinfer_python-0.5.2-py3-none-any.whl",
-    sha256 = "0afdb8f536a3a101ac7f653d66a5f4f63991f820352daf64950dab89f9806c1c",
-    urls = ["https://modular-bazel-artifacts-public.s3.amazonaws.com/artifacts/flashinfer/sm100/0afdb8f536a3a101ac7f653d66a5f4f63991f820352daf64950dab89f9806c1c/flashinfer_python-0.5.2-py3-none-any.whl"],
+    downloaded_file_path = "flashinfer_python-0.6.7.post3-py3-none-any.whl",
+    sha256 = "9d3f1aa0313cf9e5cf99f7560b8e003c57876088c8abfe7a3d330cccd4873052",
+    urls = ["https://files.pythonhosted.org/packages/01/6b/4117cd7cbeff07818ae7c6b8bf5a6d1ee3eed29356672b731b55af3d4453/flashinfer_python-0.6.7.post3-py3-none-any.whl"],
 )
 
 http_file(
