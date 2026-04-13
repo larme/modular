@@ -421,7 +421,7 @@ def build_flashinfer_wheel(
 def build_flashattn_wheel(
     python: Path, src: Path, wheel_dir: Path, clean: bool = True
 ) -> WheelBuildResult:
-    """Build flash-attention wheel as pure Python (cute interface only).
+    """Build FlashAttention-4 wheel from the CUTE package subdirectory.
 
     We build a pure Python wheel because:
     1. The cute interface uses nvidia-cutlass-dsl's JIT compiler, not precompiled CUDA
@@ -444,8 +444,9 @@ def build_flashattn_wheel(
         "FLASH_ATTENTION_SKIP_CUDA_BUILD": "TRUE",
     }
 
+    cute_src = src / "flash_attn" / "cute"
     return build_wheel_generic(
-        python, src, wheel_dir, "flash_attn", env_extras, clean
+        python, cute_src, wheel_dir, "flash-attn-4", env_extras, clean
     )
 
 
@@ -601,8 +602,9 @@ def install_flashinfer(python: Path, src: Path) -> None:
 
 
 def install_flashattn(python: Path, src: Path) -> None:
-    if not src.exists():
-        print(f"[warn] flash-attention not found at {src}, skipping")
+    cute_src = src / "flash_attn" / "cute"
+    if not cute_src.exists():
+        print(f"[warn] flash-attention FA4 package not found at {cute_src}, skipping")
         return
 
     env = build_env(python)

@@ -459,9 +459,9 @@ http_file(
 
 http_file(
     name = "flash_attn_sm100_wheel",
-    downloaded_file_path = "flash_attn-2.8.3-py3-none-any.whl",
-    sha256 = "3f4db99ab00437fb50c61da11d0647e5ab7aeab1b0b7337ae048dd8ee1b308b2",
-    urls = ["https://modular-bazel-artifacts-public.s3.amazonaws.com/artifacts/flash_attn/sm100/3f4db99ab00437fb50c61da11d0647e5ab7aeab1b0b7337ae048dd8ee1b308b2/flash_attn-2.8.3-py3-none-any.whl"],
+    downloaded_file_path = "flash_attn_4-4.0.0b8-py3-none-any.whl",
+    sha256 = "bae222f60169fb411ce1fdd0d2e0f43f313d25f9f370c40a8b0edaf2743b3b62",
+    urls = ["https://files.pythonhosted.org/packages/47/15/a5bfe1e92c868331a16747543f1b937074a6b398caf630c4813336d70418/flash_attn_4-4.0.0b8-py3-none-any.whl"],
 )
 
 # https://github.com/modularml/breathe

@@ -219,7 +219,7 @@ nvidia = [
   "qwen-vl-utils",
 
   "nvidia-cudnn-frontend>=1.13.0; sys_platform == 'linux' and platform_machine == 'x86_64'",
-  "nvidia-cutlass-dsl>=4.4.1; sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "nvidia-cutlass-dsl>=4.4.2; sys_platform == 'linux' and platform_machine == 'x86_64'",
   "lmcache>=0.4.2; sys_platform == 'linux' and platform_machine == 'x86_64'",  # External KV cache integration (v1 API required)
 ]
 
@@ -251,7 +251,7 @@ override-dependencies = [
   "aiohttp==3.13.3",
   "apache-tvm-ffi==0.1.9",
   "flashinfer-python==0.6.3",
-  "nvidia-cutlass-dsl==4.4.1",
+  "nvidia-cutlass-dsl==4.4.2",
 ]
 
 [tool.uv.sources]

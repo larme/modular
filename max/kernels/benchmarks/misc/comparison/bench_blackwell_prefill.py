@@ -48,6 +48,10 @@ except ImportError as e:
 
 _flash_attn_varlen_func: Callable[..., Any] | None
 try:
+    # Some FA4 dependencies still import distutils on Python 3.12+.
+    # Import setuptools first so its compatibility shim is available.
+    import setuptools  # noqa: F401
+
     # The pure Python flash-attention wheel's __init__.py tries to import
     # flash_attn_2_cuda (CUDA extension not in pure wheel).
     # Bypass this by creating a stub flash_attn module with valid __path__
@@ -543,8 +547,8 @@ if __name__ == "__main__":
         no_kineto=args.no_kineto,
     )
 
-    if args.num_iters > 1 and not args.no_kineto:
-        met_sec, flops = result if result else [0, 0]
+    if args.num_iters > 1 and not args.no_kineto and result is not None:
+        met_sec, flops = result
         flops_per_sec = ThroughputMeasure(Bench.flops, flops)
         name = (
             f"MHA_Prefill/batch_size={args.batch_size}/qkv_len={args.qkv_len}/"
